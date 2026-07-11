@@ -28,3 +28,22 @@ Run taskkill /PID 41576 /F to stop it.
 ✓ Ready in 1046ms
 
  GET / 200 in 2.6s (next.js: 2.4s, application-code: 180ms)
+
+> frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.10 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.195:3000
+- Environments: .env.local
+✓ Ready in 964ms
+
+ GET / 200 in 356ms (next.js: 228ms, application-code: 128ms)
+⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+▲ Next.js 16.2.10 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.195:3000
+- Environments: .env.local
+✓ Ready in 1155ms
+
+ GET / 200 in 849ms (next.js: 585ms, application-code: 264ms)
