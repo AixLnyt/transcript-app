@@ -1,0 +1,29 @@
+# 這是根目錄的 .gitignore，管跨資料夾/專案層級的共通排除項目。
+# frontend/ 底下已經有 create-next-app 自動產生的專屬 .gitignore
+# （處理 Next.js/Vercel/yarn 相關細節），那份不需要更動，
+# Git 會同時套用根目錄與子資料夾各自的 .gitignore，兩者疊加生效。
+
+# ---------- 環境變數與敏感資訊 ----------
+.env.local
+.env
+
+# ---------- Node.js（涵蓋 frontend/ 與 launcher/ 底下的 node_modules）----------
+node_modules/
+
+# ---------- Python（backend/）----------
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# ---------- 使用者上傳的實際資料 ----------
+backend/uploads/
+
+# ---------- 作業系統雜訊檔案 ----------
+.DS_Store
+Thumbs.db
+
+# ---------- 編輯器設定（依個人習慣決定要不要排除）----------
+.vscode/
+.idea/

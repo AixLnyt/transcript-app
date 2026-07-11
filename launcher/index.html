@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>語音轉逐字稿 - 啟動器</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: "Microsoft JhengHei", sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+    }
+    h1 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    #status {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 24px;
+      min-height: 18px;
+    }
+    .buttons {
+      display: flex;
+      gap: 12px;
+    }
+    button {
+      padding: 10px 24px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    #start-btn {
+      background: #0f172a;
+      color: white;
+    }
+    #start-btn:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+    #stop-btn {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    #stop-btn:disabled {
+      background: #f1f5f9;
+      color: #cbd5e1;
+      cursor: not-allowed;
+    }
+    .hint {
+      margin-top: 20px;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <h1>語音轉逐字稿</h1>
+  <div id="status">尚未啟動</div>
+  <div class="buttons">
+    <button id="start-btn">啟動</button>
+    <button id="stop-btn" disabled>停止</button>
+  </div>
+  <button id="logs-btn" style="margin-top: 12px; background: none; border: none; color: #64748b; font-size: 12px; text-decoration: underline; cursor: pointer;">
+    開啟日誌資料夾
+  </button>
+  <div class="hint">關閉視窗會一併停止後端與前端服務</div>
+
+  <script>
+    const startBtn = document.getElementById("start-btn");
+    const stopBtn = document.getElementById("stop-btn");
+    const statusEl = document.getElementById("status");
+
+    startBtn.addEventListener("click", () => {
+      window.launcherAPI.start();
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+    });
+
+    stopBtn.addEventListener("click", () => {
+      window.launcherAPI.stop();
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    });
+
+    document.getElementById("logs-btn").addEventListener("click", () => {
+      window.launcherAPI.openLogs();
+    });
+
+    window.launcherAPI.onStatusUpdate((message) => {
+      statusEl.textContent = message;
+    });
+  </script>
+</body>
+</html>
