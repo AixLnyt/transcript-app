@@ -1,6 +1,6 @@
 # 語音轉逐字稿（Transcript App）
 
-**[English](./README.en.md)** | 繁體中文
+**[English](./README_EN.md)** | 繁體中文
 
 > 上傳音檔或影片，自動產生帶時間戳記的逐字稿，點擊任一句即可跳到該時間點播放。
 
