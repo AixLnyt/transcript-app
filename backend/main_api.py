@@ -11,6 +11,7 @@ import shutil
 import traceback
 from pathlib import Path
 from typing import List, Optional
+from urllib.parse import quote
 
 from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -132,7 +133,10 @@ async def get_result(session_id: str):
 
     input_path: Path = job["input_path"]
     media_type = "video" if input_path.suffix.lower() in VIDEO_EXTENSIONS else "audio"
-    media_url = f"/static/uploads/{input_path.name}"
+    # 檔名可能含中文字、空格等特殊字元，直接塞進網址字串會讓瀏覽器
+    # 的 <video>/<audio> 標籤載入失敗（"no supported sources" 錯誤）。
+    # 這裡做正確的 URL 編碼，FastAPI/Starlette 的 StaticFiles 會自動解碼回原始檔名。
+    media_url = f"/static/uploads/{quote(input_path.name)}"
 
     return TranscribeResponse(
         session_id=session_id,
