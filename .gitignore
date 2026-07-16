@@ -4,7 +4,6 @@
 # Git 會同時套用根目錄與子資料夾各自的 .gitignore，兩者疊加生效。
 
 # ---------- 環境變數與敏感資訊 ----------
-
 .env.local
 .env
 
@@ -18,8 +17,13 @@ __pycache__/
 .venv/
 venv/
 
-# ---------- 使用者上傳的實際資料 ----------
+# ---------- 使用者上傳的實際資料與執行期產生的檔案 ----------
 backend/uploads/
+backend/history/
+backend/thumbnails/
+backend/checkpoints/
+backend/logs/
+launcher/logs/
 
 # ---------- 作業系統雜訊檔案 ----------
 .DS_Store
@@ -28,4 +32,3 @@ Thumbs.db
 # ---------- 編輯器設定（依個人習慣決定要不要排除）----------
 .vscode/
 .idea/
-launcher/logs/

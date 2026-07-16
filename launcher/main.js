@@ -108,6 +108,13 @@ async function startServices() {
     frontendProcess.stdout.pipe(frontendLogStream);
     frontendProcess.stderr.pipe(frontendLogStream);
 
+    sendStatus("等待後端就緒...");
+    const backendReady = await waitForPort(8000, 60);
+    if (!backendReady) {
+      sendStatus("後端等待逾時，請檢查日誌");
+      return;
+    }
+
     sendStatus("等待前端就緒...");
     const ready = await waitForPort(3000, 60);
 

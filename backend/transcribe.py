@@ -64,6 +64,101 @@ def _load_model(model_size: str) -> WhisperModel:
     return model
 
 
+def get_model(model_size: str) -> WhisperModel:
+    """對外公開的模型取得介面，行為與 _load_model 相同（延遲載入 + 快取）"""
+    return _load_model(model_size)
+
+
+def get_media_duration(file_path) -> float:
+    """探測音檔/影片的總長度（秒），只讀取 metadata 不做完整解碼，速度很快"""
+    import av
+
+    container = av.open(str(file_path))
+    duration = container.duration / 1_000_000 if container.duration else 0.0
+    container.close()
+    return duration
+
+
+def extract_audio_chunk(input_path, start: float, end: float, output_path) -> None:
+    """
+    用 PyAV 擷取 [start, end) 這段時間的音訊，另存成一個獨立的暫存 wav 檔。
+
+    不直接對整份大檔案呼叫 faster-whisper 的 clip_timestamps 參數分段，
+    是因為該參數目前有已知 bug：範圍超過 30 秒時，超過的部分會被忽略、
+    只會轉錄該範圍的前 30 秒（詳見
+    https://github.com/SYSTRAN/faster-whisper/issues/1355）。
+    改用實際擷取音訊片段另存成獨立小檔案的方式繞開這個限制。
+
+    這樣做還有個附帶好處：即使原始來源是 60GB 的大型影片檔，
+    每次處理的暫存檔案都只是幾分鐘的音訊，不會佔用大量硬碟空間，
+    處理完就可以立刻刪除。
+    """
+    import av
+
+    input_container = av.open(str(input_path))
+    audio_stream = input_container.streams.audio[0]
+
+    output_container = av.open(str(output_path), mode="w")
+    output_stream = output_container.add_stream("pcm_s16le", rate=audio_stream.rate)
+    output_stream.layout = "mono"
+
+    # 關鍵：解碼出來的原始音框，格式/聲道數/取樣率很可能跟輸出流設定不一致
+    # （例如來源是立體聲、浮點取樣格式，而輸出要求 mono s16）。
+    # 如果沒有先正確重新取樣就直接塞給編碼器，會產生損毀或幾乎無聲的音訊，
+    # 導致 VAD 偵測不到語音、轉錄結果幾乎是空的（這是先前版本的實際 bug）。
+    resampler = av.AudioResampler(format="s16", layout="mono", rate=audio_stream.rate)
+
+    # seek 到接近 start 的位置（seek 精度不保證到毫秒，靠下面的時間比對做精確過濾）
+    input_container.seek(int(start / audio_stream.time_base), stream=audio_stream, backward=True)
+
+    for frame in input_container.decode(audio_stream):
+        frame_time = float(frame.pts * audio_stream.time_base)
+        if frame_time < start:
+            continue
+        if frame_time >= end:
+            break
+        for resampled_frame in resampler.resample(frame):
+            resampled_frame.pts = None
+            for packet in output_stream.encode(resampled_frame):
+                output_container.mux(packet)
+
+    # 把 resampler 內部緩衝區剩餘的資料也一併沖出來，避免片段結尾的音訊被遺漏
+    for resampled_frame in resampler.resample(None):
+        resampled_frame.pts = None
+        for packet in output_stream.encode(resampled_frame):
+            output_container.mux(packet)
+
+    for packet in output_stream.encode():
+        output_container.mux(packet)
+
+    output_container.close()
+    input_container.close()
+
+
+def transcribe_chunk_file(model, chunk_path, on_segment=None) -> List[TranscriptSegment]:
+    """
+    轉錄單一個已經切好的音訊區塊檔案，回傳的時間戳記是「相對於這個區塊本身」，
+    呼叫端需要自行加上這個區塊的起始秒數，才會變成相對於原始完整檔案的絕對時間。
+
+    on_segment: 選填，簽名為 (segment_dict) -> None 的回呼函式。
+    faster-whisper 是逐句產生結果的，這裡讓呼叫端可以即時知道每一句的內容，
+    避免處理一個較長的區塊時，中間有一大段時間完全沒有任何日誌輸出、
+    看起來像卡住了。
+    """
+    segments_gen, _info = model.transcribe(
+        str(chunk_path),
+        beam_size=5,
+        vad_filter=True,
+    )
+    result = []
+    for s in segments_gen:
+        seg = {"start": round(s.start, 2), "end": round(s.end, 2), "text": s.text.strip()}
+        result.append(seg)
+        if on_segment:
+            on_segment(seg)
+    return result
+
+
 def transcribe_file(
     file_path: str, model_size: str = DEFAULT_MODEL_SIZE, progress_callback=None
 ) -> List[TranscriptSegment]:

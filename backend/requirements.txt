@@ -4,3 +4,7 @@ python-multipart
 pydantic
 faster-whisper
 av
+Pillow
+yt-dlp
+pyannote-audio
+speechbrain
